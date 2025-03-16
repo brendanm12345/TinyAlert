@@ -1,7 +1,11 @@
 # TinyAlert: Email Alerts From Browser Workflows
 
-Imagine this scenario. You want to go camping in Big Sur, but you check and 0 campsites are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! Meet TinyAlert. Warning this tool does NOT use AI 🙂.
+Imagine this scenario. You want to go camping in Big Sur, but you check and 0 campsites are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! Meet TinyAlert. Warning this tool does NOT use AI 🙂
 
+## Example
+![tiny-alert](https://github.com/user-attachments/assets/7e51cdf3-9546-4b99-9159-e8314546fef0)
+
+*Note: this is an example of what would be running in the background. Not sped up.*
 ## Setup
 
 1. Clone the repository and install dependencies:
@@ -18,16 +22,23 @@ pip install -r requirements.txt
 export GMAIL_SMTP_APP_PASSWORD='your-app-password'
 ```
 
-3. Run setup:
-```bash
-python3 setup.py
-```
+3. Record a browser workflow
+- You can easily do this using Playwright Codegen. Please defer to the [docs](https://playwright.dev/python/docs/codegen) for instructions
 
-4. Grant Required Permissions:
+4. Customize `main.py`
+- Paste the playwright code for your browser workflow
+- Update the email sender/recipient/message/subject information
+
+5. Grant Required Permissions:
 - Open System Settings > Privacy & Security > Full Disk Access
 - Click + and add:
   - `/usr/sbin/cron`
   - `/bin/bash` (use Cmd+Shift+G to navigate)
+ 
+6. Run setup (your cron job will be active after this):
+```bash
+python3 setup.py
+```
 
 ## Testing
 
