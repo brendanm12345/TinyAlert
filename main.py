@@ -32,7 +32,7 @@ def run(playwright: Playwright, headless: bool = True) -> None:
 
     except Exception as e:
         print("Target condition met!")
-        screenshot_path = "screnshots/condition_met.png"
+        screenshot_path = "screenshots/condition_met.png"
         page.screenshot(path=screenshot_path)
         print(f"Screenshot saved to {screenshot_path}")
         return True
@@ -72,4 +72,4 @@ if __name__ == "__main__":
     subject = "🏕️ ALERT: Pfeiffer Big Sur SP campsite available! Book now!"
     message = "There is a Pfeiffer Big Sur SP campsite available! Book at https://www.reservecalifornia.com/Web/ before it's gone"
     
-    main(sender, recipients, subject, message, headless=False)
+    main(sender, recipients, subject, message, headless=True)

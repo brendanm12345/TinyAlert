@@ -3,9 +3,20 @@ import shutil
 import subprocess
 from pathlib import Path
 
+# Change these based on your preference!
+MORNING_HOUR = 10
+AFTERNOON_HOUR = 17
+MINUTE = 0
+
+try:
+    PATH_TO_PYTHON_INTERPRETER = subprocess.check_output(['which', 'python3'], text=True).strip()
+except subprocess.CalledProcessError as e:
+    print("⚠️  Could not automatically detect Python path")
+    PATH_TO_PYTHON_INTERPRETER = "/usr/bin/python3"  # fallback
+
 def create_plist():
     """Create the launch agent plist file."""
-    plist_content = '''<?xml version="1.0" encoding="UTF-8"?>
+    plist_content = f'''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -22,15 +33,15 @@ def create_plist():
     <array>
         <dict>
             <key>Hour</key>
-            <integer>10</integer>
+            <integer>{MORNING_HOUR}</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>{MINUTE}</integer>
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>16</integer>
+            <integer>{AFTERNOON_HOUR}</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>{MINUTE}</integer>
         </dict>
     </array>
 </dict>
@@ -47,27 +58,27 @@ def create_plist():
 
 def create_run_checker():
     """Create the run-checker.sh script."""
-    script_content = '''#!/bin/bash
+    script_content = f'''#!/bin/bash
 
-# Wait for network connectivity
-wait_for_network() {
-    while ! ping -c 1 google.com &> /dev/null; do
-        echo "Waiting for network connection..."
-        sleep 5
-    done
-}
+echo "[$(date)] Starting run-checker.sh"
+
+# Initial wait for system to fully wake up
+sleep 10
+echo "[$(date)] Initial wait complete"
 
 # Path to your Python script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 cd "$SCRIPT_DIR"
+echo "[$(date)] Changed to directory: $SCRIPT_DIR"
 
-# Ensure we have network before running
-wait_for_network
+# Use specific Python interpreter
+PYTHON_PATH="{PATH_TO_PYTHON_INTERPRETER}"
+echo "[$(date)] Using Python: $PYTHON_PATH"
 
-# Run the campsite checker
-python3 main.py
-
-'''
+echo "[$(date)] Running main.py"
+$PYTHON_PATH main.py
+RESULT=$?
+echo "[$(date)] main.py finished with exit code: $RESULT"'''
     
     script_path = Path("run-checker.sh")
     with open(script_path, 'w') as f:
@@ -99,7 +110,7 @@ def setup_launch_agent():
 def setup_cron():
     """Set up the cron jobs."""
     script_path = Path.cwd() / "run-checker.sh"
-    cron_command = f'0 10,16 * * * {script_path} >> ~/Library/Logs/website-checker.log 2>&1'
+    cron_command = f'{MINUTE} {MORNING_HOUR},{AFTERNOON_HOUR} * * * {script_path} >> ~/Library/Logs/tiny-alert.log 2>&1'
     
     try:
         # Get existing crontab
@@ -122,8 +133,12 @@ def setup_logs():
     """Set up logging directory."""
     log_dir = Path.home() / "Library" / "Logs"
     log_dir.mkdir(parents=True, exist_ok=True)
+
+    # delete log file if it exsits
+    log_file = log_dir / "tiny-alert.log"
+    if log_file.exists(): log_file.unlink()
     
-    log_file = log_dir / "website-checker.log"
+    log_file = log_dir / "tiny-alert.log"
     log_file.touch()
     print("✅ Log file created at", log_file)
 
@@ -154,7 +169,9 @@ def main():
     setup_cron()
     setup_logs()
     
-    print("\n✨ Setup complete! TinyAlert will run on the specified cron job")
+    print("\n✨ Setup complete! TinyAlert will run at the following times:")
+    print(f"   - {MORNING_HOUR}:{MINUTE:02d}")
+    print(f"   - {AFTERNOON_HOUR}:{MINUTE:02d}")
 
 if __name__ == "__main__":
     main()

@@ -1,20 +1,21 @@
 #!/bin/bash
 
-# Wait for network connectivity
-wait_for_network() {
-    while ! ping -c 1 google.com &> /dev/null; do
-        echo "Waiting for network connection..."
-        sleep 5
-    done
-}
+echo "[$(date)] Starting run-checker.sh"
+
+# Initial wait for system to fully wake up
+sleep 10
+echo "[$(date)] Initial wait complete"
 
 # Path to your Python script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+echo "[$(date)] Changed to directory: $SCRIPT_DIR"
 
-# Ensure we have network before running
-wait_for_network
+# Use specific Python interpreter
+PYTHON_PATH="/Users/brendanmclaughlin/venvs/agents/bin/python3"
+echo "[$(date)] Using Python: $PYTHON_PATH"
 
-# Run the campsite checker
-python3 main.py
-
+echo "[$(date)] Running main.py"
+$PYTHON_PATH main.py
+RESULT=$?
+echo "[$(date)] main.py finished with exit code: $RESULT"

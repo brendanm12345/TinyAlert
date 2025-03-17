@@ -1,17 +1,19 @@
 # TinyAlert: Email Alerts From Browser Workflows
 
-Imagine this scenario. You want to go camping in Big Sur, but you check and 0 campsites are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! Meet TinyAlert. Warning this tool does NOT use AI 🙂
+Imagine this scenario. You want to go camping in Big Sur, but you check and 0 campsites are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! Meet TinyAlert. Warning: this tool does NOT use AI 🙂
 
+## Setup
 ## Example
-![tiny-alert](https://github.com/user-attachments/assets/7e51cdf3-9546-4b99-9159-e8314546fef0)
+![tiny-alert](assets/tiny-alert.gif)
 
 *Note: this is an example of what would be running in the background. Not sped up.*
-## Setup
 
-1. Clone the repository and install dependencies:
+1. Create venv, clone repository, install dependencies:
 ```bash
-git clone [https://github.com/brendanm12345/TinyAlert]
-cd tiny-alert
+python3 -m venv venvs/tiny-alert
+source venvs/agents/bin/activate
+git clone https://github.com/brendanm12345/TinyAlert
+cd TinyAlert
 pip install -r requirements.txt
 ```
 
@@ -68,7 +70,7 @@ launchctl unload ~/Library/LaunchAgents/com.user.wakeschedule.plist
 
 Check logs for errors:
 ```bash
-cat ~/Library/Logs/website-checker.log
+cat ~/Library/Logs/tiny-alert.log
 ```
 
 If script isn't running:

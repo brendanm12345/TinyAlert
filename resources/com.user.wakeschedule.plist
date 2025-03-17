@@ -17,13 +17,13 @@
             <key>Hour</key>
             <integer>10</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>51</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>16</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>51</integer>
         </dict>
     </array>
 </dict>
