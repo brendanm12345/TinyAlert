@@ -11,9 +11,13 @@ def run(playwright: Playwright, headless: bool = True) -> None:
     page = context.new_page()
     
     try:
-        # START SCRIPT: Replace with your own Playwright script that raises an exception when the 
-        # condition you're looking for is met. Example below checks for campsite availability!
-        # Hint: I used `playwright codegen https://www.reservecalifornia.com` transcribe my browser workflow into code.
+        ################ START BROWSER WORKFLOW HERE ###############
+        # Replace with your own Playwright script that raises an
+        # exception when the condition you're looking for is met.
+        # The example below checks for campsite availability.
+        #
+        # Hint: Run `playwright codegen <your starting url>` 
+        # to transcribe your browser workflow into code.
         page.goto("https://www.reservecalifornia.com/Web/")
         page.get_by_role("combobox", name="Enter to search city or park").click()
         page.get_by_role("combobox", name="Enter to search city or park").fill("pfe")
@@ -25,10 +29,10 @@ def run(playwright: Playwright, headless: bool = True) -> None:
         page.get_by_role("option", name="Camping", exact=True).click()
         page.get_by_role("button", name="Show Results").click()
         page.locator("a").filter(has_text="miles away0Available SitesPfeiffer Big Sur SPPfeiffer Big Sur State Park has 1,").click()
-        # this assertion checks that there are indeed 0 campsites available... but if this text is not present, we're in luck!
+        # this assertion checks for the text "There are 0 facilities available...". If this text is not present, we get an email alert!
         expect(page.locator("#facilitysearch")).to_contain_text("There are 0 facilities available based on your search.")
         print("Target condition not met.")
-        # END SCRIPT
+        ################ END BROWSER WORKFLOW HERE ###############
 
     except Exception as e:
         print("Target condition met!")
@@ -67,7 +71,7 @@ def main(sender: str, recipients: list, subject: str, message: str, headless: bo
         traceback.print_exc()
 
 if __name__ == "__main__":
-    sender = "your-email"
+    sender = "sender-email"
     recipients = ["recipient-1-email"]
     subject = "🏕️ ALERT: Pfeiffer Big Sur SP campsite available! Book now!"
     message = "There is a Pfeiffer Big Sur SP campsite available! Book at https://www.reservecalifornia.com/Web/ before it's gone"

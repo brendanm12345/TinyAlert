@@ -3,20 +3,50 @@ import shutil
 import subprocess
 from pathlib import Path
 
-# Change these based on your preference!
-MORNING_HOUR = 10
-AFTERNOON_HOUR = 17
-MINUTE = 0
+# Alert schedule - add or remove times as needed!
+ALERT_TIMES = [
+    {"hour": 11, "minute": 0},  # 11:00 AM
+    {"hour": 17, "minute": 0},  # 5:00 PM
+    {"hour": 21, "minute": 0},  # 9:00 PM
+    # Add more times here in the same format
+    # {"hour": 14, "minute": 30},  # 2:30 PM
+]
 
-try:
-    PATH_TO_PYTHON_INTERPRETER = subprocess.check_output(['which', 'python3'], text=True).strip()
-except subprocess.CalledProcessError as e:
-    print("⚠️  Could not automatically detect Python path")
-    PATH_TO_PYTHON_INTERPRETER = "/usr/bin/python3"  # fallback
+def setup_environment():
+    """Set up environment file with necessary credentials and settings."""
+    env_file = Path(".env")
+    env_contents = []
+    
+    # Get Python interpreter path
+    try:
+        python_path = subprocess.check_output(['which', 'python3'], text=True).strip()
+        print(f"Found Python interpreter: {python_path}")
+    except subprocess.CalledProcessError:
+        print("⚠️  Could not automatically detect Python path")
+        python_path = input("Please enter path to Python interpreter: ").strip() or "/usr/bin/python3"
+    
+    env_contents.append(f'PYTHON_PATH="{python_path}"')
+    
+    # Check if GMAIL_SMTP_APP_PASSWORD is already set
+    gmail_pass = os.getenv("GMAIL_SMTP_APP_PASSWORD")
+    if not gmail_pass:
+        print("\n⚠️  GMAIL_SMTP_APP_PASSWORD not found in environment")
+        gmail_pass = input("Please enter your Gmail App Password: ").strip()
+    
+    env_contents.append(f'GMAIL_SMTP_APP_PASSWORD="{gmail_pass}"')
+    
+    # Write to .env file
+    with open(env_file, 'w') as f:
+        f.write('\n'.join(env_contents) + '\n')
+    
+    # Set restrictive permissions (only owner can read/write)
+    env_file.chmod(0o600)
+    print("✅ Environment file created with secure permissions")
+    return env_file
 
 def create_plist():
     """Create the launch agent plist file."""
-    plist_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+    plist_content = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -30,19 +60,19 @@ def create_plist():
         <string>300</string>
     </array>
     <key>StartCalendarInterval</key>
-    <array>
+    <array>'''
+    
+    # add each alert time to the plist
+    for time in ALERT_TIMES:
+        plist_content += f'''
         <dict>
             <key>Hour</key>
-            <integer>{MORNING_HOUR}</integer>
+            <integer>{time["hour"]}</integer>
             <key>Minute</key>
-            <integer>{MINUTE}</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>{AFTERNOON_HOUR}</integer>
-            <key>Minute</key>
-            <integer>{MINUTE}</integer>
-        </dict>
+            <integer>{time["minute"]}</integer>
+        </dict>'''
+    
+    plist_content += '''
     </array>
 </dict>
 </plist>'''
@@ -56,36 +86,6 @@ def create_plist():
     
     return plist_path
 
-def create_run_checker():
-    """Create the run-checker.sh script."""
-    script_content = f'''#!/bin/bash
-
-echo "[$(date)] Starting run-checker.sh"
-
-# Initial wait for system to fully wake up
-sleep 10
-echo "[$(date)] Initial wait complete"
-
-# Path to your Python script
-SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
-cd "$SCRIPT_DIR"
-echo "[$(date)] Changed to directory: $SCRIPT_DIR"
-
-# Use specific Python interpreter
-PYTHON_PATH="{PATH_TO_PYTHON_INTERPRETER}"
-echo "[$(date)] Using Python: $PYTHON_PATH"
-
-echo "[$(date)] Running main.py"
-$PYTHON_PATH main.py
-RESULT=$?
-echo "[$(date)] main.py finished with exit code: $RESULT"'''
-    
-    script_path = Path("run-checker.sh")
-    with open(script_path, 'w') as f:
-        f.write(script_content)
-    
-    return script_path
-
 def setup_launch_agent():
     """Set up the launch agent for scheduled wake."""
     launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
@@ -96,7 +96,7 @@ def setup_launch_agent():
     plist_dest = launch_agents_dir / "com.user.wakeschedule.plist"
     shutil.copy2(plist_source, plist_dest)
     
-    # Set correct permissions
+    # Set perms
     plist_dest.chmod(0o644)
     
     # Load the launch agent
@@ -110,17 +110,36 @@ def setup_launch_agent():
 def setup_cron():
     """Set up the cron jobs."""
     script_path = Path.cwd() / "run-checker.sh"
-    cron_command = f'{MINUTE} {MORNING_HOUR},{AFTERNOON_HOUR} * * * {script_path} >> ~/Library/Logs/tiny-alert.log 2>&1'
+    
+    # Create cron schedule string
+    minutes = [str(t['minute']) for t in ALERT_TIMES]
+    hours = [str(t['hour']) for t in ALERT_TIMES]
+    
+    minute_str = ','.join(set(minutes))  # Use set to remove duplicates
+    hour_str = ','.join(set(hours))      # Use set to remove duplicates
+    
+    cron_command = f'{minute_str} {hour_str} * * * {script_path.absolute()} >> ~/Library/Logs/tiny-alert.log 2>&1'
+    print(f"Setting up cron schedule: '{minute_str} {hour_str} * * *'")
     
     try:
         # Get existing crontab
         existing = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
         crontab = existing.stdout if existing.returncode == 0 else ""
         
+        # Ensure crontab ends with newline
+        if crontab and not crontab.endswith('\n'):
+            crontab += '\n'
+        
         # Add our job if it's not already there
-        if cron_command not in crontab:
+        if script_path.name not in crontab:  # Check for script name instead of exact command
             with open("temp_cron", "w") as f:
                 f.write(crontab + cron_command + "\n")
+            
+            # Verify the temp file
+            with open("temp_cron", "r") as f:
+                print("New crontab contents:")
+                print(f.read())
+            
             subprocess.run(["crontab", "temp_cron"], check=True)
             os.remove("temp_cron")
             print("✅ Cron jobs installed successfully")
@@ -134,44 +153,39 @@ def setup_logs():
     log_dir = Path.home() / "Library" / "Logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # delete log file if it exsits
     log_file = log_dir / "tiny-alert.log"
-    if log_file.exists(): log_file.unlink()
+    if log_file.exists():
+        log_file.unlink()
     
-    log_file = log_dir / "tiny-alert.log"
     log_file.touch()
     print("✅ Log file created at", log_file)
 
 def check_dependencies():
-    """Check if required dependencies are installed."""
+    """Verify Python installation and basic requirements."""
     try:
-        subprocess.run(["python3", "-c", "import playwright"], check=True)
+        subprocess.run(["python3", "--version"], check=True)
+        print("✅ Python 3 is installed")
     except subprocess.CalledProcessError:
-        print("Installing playwright...")
-        subprocess.run(["pip3", "install", "playwright"], check=True)
-        subprocess.run(["playwright", "install"], check=True)
-    print("✅ Dependencies verified")
+        print("⚠️  Python 3 is not installed")
+        exit(1)
 
 def main():
     """Run the complete setup process."""
-    print("Setting up Website Checker...")
+    print("Setting up Tiny Alert...")
     
-    # Create necessary directories
     os.makedirs("screenshots", exist_ok=True)
-    
-    # Create run-checker script
-    run_checker_path = create_run_checker()
-    run_checker_path.chmod(0o755)
-    
-    # Run setup steps
     check_dependencies()
+    setup_environment()
+    
+    Path("run-checker.sh").chmod(0o755)
+    
     setup_launch_agent()
     setup_cron()
     setup_logs()
     
     print("\n✨ Setup complete! TinyAlert will run at the following times:")
-    print(f"   - {MORNING_HOUR}:{MINUTE:02d}")
-    print(f"   - {AFTERNOON_HOUR}:{MINUTE:02d}")
+    for time in ALERT_TIMES:
+        print(f"   - {time['hour']:02d}:{time['minute']:02d}")
 
 if __name__ == "__main__":
     main()
