@@ -1,4 +1,4 @@
-# TinyAlert: Turn Any Browser Workflow Into an Email Alert System
+# TinyAlert 🚨: Turn Any Browser Workflow Into an Email Alert System
 
 Imagine this scenario. You want to go camping in Big Sur so head to https://www.reservecalifornia.com/Web/ to reserve a campsite only to find that 0 are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! 
 
