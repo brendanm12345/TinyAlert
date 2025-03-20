@@ -7,6 +7,12 @@ from playwright.sync_api import Playwright, sync_playwright, expect
 def run(playwright: Playwright, headless: bool = True) -> None:
     """Runs your browser workflow as a playright script and send and email if your assertion fails."""
     browser = playwright.chromium.launch(headless=headless)
+
+    context_options = {}
+    if os.path.exists("workflows/auth.json"):
+        print("Loading saved authentication from workflows/auth.json")
+        context_options["storage_state"] = "workflows/auth.json"
+    
     context = browser.new_context()
     page = context.new_page()
     

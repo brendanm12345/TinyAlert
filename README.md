@@ -1,13 +1,13 @@
-# TinyAlert: Turn Any Browser Workflow Into an Email Alert System
+# TinyAlert: Turn Any Browser Workflow Into an Email Alert System 🚨
 
-Imagine this scenario. You want to go camping in Big Sur so head to https://www.reservecalifornia.com/Web/ to reserve a campsite only to find that 0 are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! 
+Imagine this scenario: You want to go camping in Big Sur so head to https://www.reservecalifornia.com/Web/ to reserve a campsite only to find that 0 are available! You know that people cancel last minute though 😈. What if you could show a program the exact browser workflow you used to check this and it could run it in the background on a cron job and send you an email when a spot frees up! 
 
 Meet TinyAlert: a lightweight tool that turns any browser workflow into an automated alert system in < 100 lines of code. Just record your clicks, set your schedule, and get notified when things change.
 
-This tool is 100 percent AI-free 🙂
+This tool is 100% AI-free 🙂
 
 ## Example
-![tiny-alert](assets/tiny-alert.gif)
+![tiny-alert](assets/tiny-alert-demo.gif)
 
 *Note: this is an example of a browser workflow that would be run in the background. Not sped up.*
 
@@ -22,27 +22,32 @@ cd TinyAlert
 pip install -r requirements.txt
 ```
 
-2. Configure Gmail:
+2. Install Playwright Browsers:
+```bash
+python -m playwright install
+```
+
+3. Configure Gmail:
 - Generate an App Password: Google Account > Security > 2-Step Verification > App Passwords
 - Set environment variable:
 ```bash
 export GMAIL_SMTP_APP_PASSWORD='your-app-password'
 ```
 
-3. Record a browser workflow
-- You can easily do this using Playwright Codegen. Please refer to the [docs](https://playwright.dev/python/docs/codegen) for instructions
+4. Head over to [workflows/README.md](workflows/README.md) to to record your own browser workflow.
+- *Note: You can also skip this step and run the demo with the example campsite checker workflow.*
 
-4. Customize `main.py`
+5. Customize `main.py`
 - Paste the playwright code for your browser workflow
 - Update the email sender/recipient/message/subject information
 
-5. Grant Required Permissions:
+6. Grant Required Permissions:
 - Open System Settings > Privacy & Security > Full Disk Access
 - Click + and add:
   - `/usr/sbin/cron`
   - `/bin/bash` (use Cmd+Shift+G to navigate)
  
-6. Run setup (your cron job will be active after this):
+7. Run setup (your cron job will be active after this):
 ```bash
 python3 setup.py
 ```
@@ -55,7 +60,7 @@ crontab -l
 ```
 You should see an output like `17,21,11 * * * /Users/...`.
 
-2. Verify that when the cron job triggers, the script will execute successfully
+2. Execute the run script manually to werify that when the cron job triggers, it will work:
 ```bash
 ./run-checker.sh
 ```
@@ -89,6 +94,7 @@ If script isn't running:
 1. Verify permissions (steps above)
 2. Ensure Mac power settings allow wake from sleep
 3. Ask your favorite frontier model
+4. Add GitHub issues :)
 
 ## License
 MIT
